@@ -1,18 +1,60 @@
 [Unit]
 Description=Odoo 11 - myodoo11
+Documentation=https://github.com/xdesux/odoo11-ubuntu20-wsl2-guide/blob/main/PRODUCTION.md
 After=network.target postgresql.service
-Requires=postgresql.service
+Wants=postgresql.service
+StartLimitIntervalSec=300
+StartLimitBurst=12
 
 [Service]
 Type=simple
-
 User=myodoo11
 Group=myodoo11
+WorkingDirectory=/opt/myodoo11/myodoo11
+Environment="PATH=/opt/myodoo11/myodoo11-venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="HOME=/var/lib/myodoo11"
+Environment="PYTHONDONTWRITEBYTECODE=1"
+Environment="PYTHONUNBUFFERED=1"
+Environment="PGCONNECT_TIMEOUT=5"
+UMask=0077
 
+StateDirectory=myodoo11
+StateDirectoryMode=0700
+
+; Reject the shipped master-password placeholder.
+ExecStartPre=/usr/bin/test -r /etc/myodoo11.conf
+ExecStartPre=/usr/bin/grep -Eq "^admin_passwd = [A-Za-z0-9]{64}$" /etc/myodoo11.conf
+; Check actual database access: postgresql.service alone does not prove readiness.
+ExecStartPre=/usr/bin/psql -X -w -h /var/run/postgresql -p 5432 -U myodoo11 -d myodoo11 -v ON_ERROR_STOP=1 -c "SELECT 1"
 ExecStart=/opt/myodoo11/myodoo11-venv/bin/python /opt/myodoo11/myodoo11/odoo-bin -c /etc/myodoo11.conf
 
-Restart=always
-RestartSec=5
+Restart=on-failure
+RestartSec=15
+TimeoutStartSec=60
+TimeoutStopSec=360
+KillSignal=SIGTERM
+KillMode=mixed
+LimitNOFILE=65536
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/myodoo11
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=myodoo11
 
 [Install]
 WantedBy=multi-user.target
