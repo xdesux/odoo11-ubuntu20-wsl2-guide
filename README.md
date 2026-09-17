@@ -1,5 +1,7 @@
 # Odoo 11 Setup Guide — Ubuntu 20.04 WSL2
 
+> **Deployment templates:** Use [PRODUCTION.md](PRODUCTION.md) with [myodoo11.conf](myodoo11.conf) and [myodoo11.service](myodoo11.service) for the hardened legacy setup. It supersedes the development examples below for configuration, database privileges, service installation, permissions, logging, network access and updates. The templates require local PostgreSQL peer authentication, an existing database, a locally generated master password, and a same-host HTTPS proxy. Complete the migration and validation steps before use.
+
 ## 1. Purpose
 
 This document provides a reusable step-by-step process for installing and configuring **Odoo 11** on **Ubuntu 20.04 running under WSL2**.
@@ -565,47 +567,7 @@ ls -ld /var/log/myodoo11
 
 # 16. Create the Odoo Configuration File
 
-Create:
-
-```bash
-sudo nano /etc/myodoo11.conf
-```
-
-Example:
-
-```ini
-[options]
-
-admin_passwd = CHANGE_MASTER_PASSWORD
-
-db_host = localhost
-db_port = 5432
-db_user = myodoo11
-db_password = CHANGE_ME
-
-logfile = /var/log/myodoo11/myodoo11-server.log
-
-addons_path = /opt/myodoo11/myodoo11/addons,/opt/myodoo11/myodoo11/custom_apps,/opt/myodoo11/myodoo11/test_apps
-
-xmlrpc_port = 5511
-
-log_db = True
-log_db_level = warning
-log_handler = :INFO
-log_level = info
-
-limit_request = 999999
-limit_time_cpu = 999999
-limit_time_real = 99999
-```
-
-Add additional custom addon directories as required.
-
-Example:
-
-```ini
-addons_path = /opt/myodoo11/myodoo11/addons,/opt/myodoo11/myodoo11/custom_apps,/opt/myodoo11/myodoo11/test_apps,/opt/myodoo11/myodoo11/client_dev
-```
+Use the repository's [myodoo11.conf](myodoo11.conf). Follow [production setup steps 1–3](PRODUCTION.md) to prepare database access, permissions, the master password and persistent state before starting Odoo. Do not use the earlier development database credentials with this template.
 
 ---
 
@@ -743,34 +705,7 @@ exit
 
 # 22. Create the systemd Service
 
-Create:
-
-```bash
-sudo nano /etc/systemd/system/myodoo11.service
-```
-
-Use:
-
-```ini
-[Unit]
-Description=Odoo 11 - myodoo11
-After=network.target postgresql.service
-Requires=postgresql.service
-
-[Service]
-Type=simple
-
-User=myodoo11
-Group=myodoo11
-
-ExecStart=/opt/myodoo11/myodoo11-venv/bin/python /opt/myodoo11/myodoo11/odoo-bin -c /etc/myodoo11.conf
-
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
+Use [myodoo11.service](myodoo11.service) and the [service installation procedure](PRODUCTION.md#4-install-and-start-the-service). It requires the matching configuration, local PostgreSQL peer authentication and the prepared database.
 
 ---
 
@@ -1268,56 +1203,13 @@ Logs:
 
 # 35. Complete Configuration Template
 
-```ini
-[options]
-
-admin_passwd = CHANGE_MASTER_PASSWORD
-
-db_host = localhost
-db_port = 5432
-db_user = PROJECT_NAME
-db_password = CHANGE_DATABASE_PASSWORD
-
-logfile = /var/log/PROJECT_NAME/PROJECT_NAME-server.log
-
-addons_path = /opt/PROJECT_NAME/PROJECT_NAME/addons,/opt/PROJECT_NAME/PROJECT_NAME/custom_apps,/opt/PROJECT_NAME/PROJECT_NAME/test_apps
-
-xmlrpc_port = CHANGE_PORT
-
-log_db = True
-log_db_level = warning
-log_handler = :INFO
-log_level = info
-
-limit_request = 999999
-limit_time_cpu = 999999
-limit_time_real = 99999
-```
+The maintained configuration is [myodoo11.conf](myodoo11.conf). See [PRODUCTION.md](PRODUCTION.md) for required site-specific changes, worker sizing and HTTPS proxy setup.
 
 ---
 
 # 36. Complete systemd Template
 
-```ini
-[Unit]
-Description=Odoo 11 - PROJECT_NAME
-After=network.target postgresql.service
-Requires=postgresql.service
-
-[Service]
-Type=simple
-
-User=PROJECT_NAME
-Group=PROJECT_NAME
-
-ExecStart=/opt/PROJECT_NAME/PROJECT_NAME-venv/bin/python /opt/PROJECT_NAME/PROJECT_NAME/odoo-bin -c /etc/PROJECT_NAME.conf
-
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
+The maintained service is [myodoo11.service](myodoo11.service). See [PRODUCTION.md](PRODUCTION.md) for installation, sandbox requirements, journald logging and recovery checks.
 
 ---
 
